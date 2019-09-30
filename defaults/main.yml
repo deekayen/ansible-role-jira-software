@@ -10,7 +10,6 @@ client_max_body_size: 100M
 jira_version: 8.4.1
 jira_download: "https://product-downloads.atlassian.com/software/jira/downloads/atlassian-jira-software-{{ jira_version }}.tar.gz"
 
-nginx_branch: stable
 dhparams_bits: 3072
 server_name: jira.example.com
 ssl_certificate: /etc/ssl/certs/snakeoil.crt

@@ -15,8 +15,7 @@ galaxy_info:
         - 7
 
 dependencies:
-  - role: nginxinc.nginx
-    nginx_branch: "{{ nginx_branch }}"
+  - nginxinc.nginx
   - role: geerlingguy.pip
     pip_install_packages:
       - name: PyOpenSSL>=0.15
