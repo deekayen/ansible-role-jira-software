@@ -4,6 +4,11 @@ matrix:
   include:
     - os: linux
       sudo: false
+      python: 3.6
+      language: python
+      dist: xenial
+    - os: linux
+      sudo: false
       python: 3.7
       language: python
       dist: bionic
