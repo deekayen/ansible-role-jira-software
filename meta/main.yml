@@ -18,5 +18,5 @@ dependencies:
   - nginxinc.nginx
   - role: geerlingguy.pip
     pip_install_packages:
-      - name: PyOpenSSL>=0.15
+      - name: PyOpenSSL>=16.2.0
       - name: cryptography>=1.6
