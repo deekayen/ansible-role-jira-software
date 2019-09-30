@@ -1,4 +1,5 @@
 galaxy_info:
+  role_name: jira_software
   author: David Norman
   description: Install Atlassian Jira software.
 
