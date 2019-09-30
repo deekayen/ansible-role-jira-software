@@ -14,9 +14,9 @@ matrix:
       dist: bionic
 
 install:
-  - pip install ansible
-  - pip install ansible-lint
-  - pip install ansible-review
+  - pip3 install ansible
+  - pip3 install ansible-lint
+  - pip3 install ansible-review
   - ansible-galaxy install --force git+https://github.com/deekayen/ansible-role-jira-software.git,${TRAVIS_COMMIT}
 
 before_script:
