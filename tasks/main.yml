@@ -1,0 +1,190 @@
+---
+
+- name: Install ca-certificates for nginx TLS.
+  yum:
+    name:
+      - ca-certificates
+    state: present
+
+- name: Setup nginx cert directory.
+  file:
+    path: /etc/ssl/certs
+    state: directory
+  register: nginx_cert_path
+
+- debug:
+    var: nginx_cert_path
+    verbosity: 2
+
+- name: Generate dhparams for nginx.
+  openssl_dhparam:
+    path: "{{ ssl_dhparam }}"
+    size: "{{ dhparams_bits }}"
+  notify: restart nginx
+
+- name: Generate an OpenSSL private key.
+  openssl_privatekey:
+    path: /etc/ssl/certs/snakeoil.pem
+    size: "{{ ssl_size }}"
+    type: "{{ ssl_type }}"
+
+- name: Generate an OpenSSL CSR with subjectAltName extension with dynamic list.
+  openssl_csr:
+    path: /etc/ssl/certs/snakeoil.csr
+    privatekey_path: /etc/ssl/certs/snakeoil.pem
+    country_name: "{{ ssl_country_name }}"
+    state_or_province_name: "{{ ssl_state_or_province_name }}"
+    locality_name: "{{ ssl_locality_name }}"
+    organization_name: "{{ ssl_organization_name }}"
+    organizational_unit_name: "{{ ssl_organizational_unit_name }}"
+    common_name: "{{ ansible_fqdn }}"
+    subject_alt_name: "{{ item.value | map('regex_replace', '^', 'DNS:') | list }}"
+  with_dict:
+    dns_server:
+      - "{{ inventory_hostname }}"
+      - "{{ ansible_hostname }}"
+
+- name: Generate a self-signed TLS certificate.
+  openssl_certificate:
+    path: /etc/ssl/certs/snakeoil.crt
+    privatekey_path: /etc/ssl/certs/snakeoil.pem
+    csr_path: /etc/ssl/certs/snakeoil.csr
+    provider: selfsigned
+
+- name: Allow HTTPS in firewalld.
+  firewalld:
+    service: https
+    permanent: yes
+    state: enabled
+  notify: reload firewalld
+
+# Without this, the httpd reverseproxy service can't connect even to localhost.
+# This policy could be tigher, but the native selinux Ansible modules don't
+# support tigher policies. We'd have to use command or shell for something like:
+# setsebool -P httpd_can_network_connect=1
+# and/or
+# semanage port -a -p tcp -t http_port_t 8081
+#
+# cat /var/log/audit/audit.log | audit2allow -v
+#============= httpd_t ==============
+# src="httpd_t" tgt="transproxy_port_t" class="tcp_socket", perms="name_connect"
+# comm="httpd" exe="" path=""
+#!!!! This avc can be allowed using the boolean 'httpd_can_network_connect'
+#allow httpd_t transproxy_port_t:tcp_socket name_connect;
+- name: Set httpd_t selinux policy to permissive.
+  selinux_permissive:
+    name: httpd_t
+    permissive: true
+
+- name: Install Java.
+  yum:
+    name: "{{ java_application }}"
+    state: present
+
+- name: Create local jira group.
+  group:
+    name: jira
+    gid: 50000
+    state: present
+
+- name: Create local jira user.
+  user:
+    name: jira
+    group: jira
+    uid: 50000
+    state: present
+
+- name: Set permissions on the home directory.
+  file:
+    path: /var/atlassian
+    mode: 0755
+    state: directory
+
+- name: Setup install paths.
+  file:
+    path: "{{ item }}"
+    owner: jira
+    group: jira
+    recurse: yes
+    state: directory
+  with_items:
+    - /opt/atlassian/jira
+    - /var/atlassian/jira
+    - /var/atlassian/share
+
+# This is before the tarball so the service installation handler
+# will fire before the later handler tries to start the service.
+- name: Copy init.d service file for JIRA.
+  copy:
+    src: jira
+    dest: /etc/init.d/jira
+    mode: 0755
+    owner: root
+    group: root
+  notify:
+    - install jira service
+    - restart jira
+
+- name: Unpack the install archive.
+  unarchive:
+    src: "{{ jira_download }}"
+    dest: /opt/atlassian/jira
+    owner: jira
+    remote_src: yes
+    creates: "/opt/atlassian/jira/atlassian-jira-software-{{ jira_version }}-standalone/bin/startup.sh"
+  become: yes
+  become_user: jira
+  notify: start jira
+
+- name: Link the unpacked archive to current.
+  file:
+    src: "/opt/atlassian/jira/atlassian-jira-software-{{ jira_version }}-standalone"
+    dest: /opt/atlassian/jira/current
+    owner: jira
+    state: link
+  become: yes
+  become_user: jira
+  notify: restart jira
+
+- name: Set the jira application home property.
+  lineinfile:
+    path: /opt/atlassian/jira/atlassian-jira-software-{{ jira_version }}-standalone/atlassian-jira/WEB-INF/classes/jira-application.properties
+    regexp: '^jira.home'
+    line: jira.home = /var/atlassian/jira
+    owner: jira
+  become: yes
+  become_user: jira
+  notify: restart jira
+
+- name: Set the jira application local user property.
+  lineinfile:
+    path: /opt/atlassian/jira/atlassian-jira-software-{{ jira_version }}-standalone/bin/user.sh
+    regexp: '^JIRA_USER'
+    line: JIRA_USER="jira"
+    owner: jira
+  become: yes
+  become_user: jira
+  notify: restart jira
+
+- name: Upload the cluster properties configuration.
+  template:
+    src: cluster.properties.j2
+    dest: /var/atlassian/jira/cluster.properties
+    owner: jira
+  notify: restart jira
+
+- name: Upload server configuration.
+  template:
+    src: server.xml.j2
+    dest: /opt/atlassian/jira/current/conf/server.xml
+    owner: jira
+    group: jira
+  notify: restart jira
+
+- name: Upload nginx configuration.
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/conf.d/jira.conf
+    owner: root
+    group: root
+  notify: restart nginx

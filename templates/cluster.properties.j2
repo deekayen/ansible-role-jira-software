@@ -1,0 +1,8 @@
+{{ ansible_managed | comment }}
+
+# This ID must be unique across the cluster (If using the Apache loadbalancer,
+# set the Apache node name by appending the following setting to
+# the same variable as below)
+jira.node.id = {{ inventory_hostname }}
+# The location of the shared home directory for all JIRA nodes
+jira.shared.home = /var/atlassian/share

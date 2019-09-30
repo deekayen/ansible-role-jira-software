@@ -1,0 +1,22 @@
+---
+
+- name: install jira service
+  command: /sbin/chkconfig --add jira
+
+- name: start jira
+  service:
+    name: jira
+    state: started
+    enabled: yes
+
+- name: restart jira
+  service:
+    name: jira
+    state: restarted
+    enabled: yes
+
+- name: restart nginx
+  service:
+    name: nginx
+    state: reloaded
+    enabled: yes

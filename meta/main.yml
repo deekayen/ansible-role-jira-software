@@ -1,0 +1,22 @@
+galaxy_info:
+  author: David Norman
+  description: Install Atlassian Jira software.
+
+  issue_tracker_url: https://github.com/deekayen/ansible-role-jira-software/issues
+
+  license: BSD-3-Clause
+
+  min_ansible_version: 2.4
+
+  platforms:
+    - name: EL
+      versions:
+        - 7
+
+dependencies:
+  - role: nginxinc.nginx
+    nginx_branch: "{{ nginx_branch }}"
+  - role: geerlingguy.pip
+    pip_install_packages:
+      - name: PyOpenSSL>=0.15
+      - name: cryptography>=1.6
