@@ -32,7 +32,6 @@ script:
   - ansible-lint --exclude=/home/travis/.ansible .
   - git ls-files | grep -Ei '^[^[:punct:]].+.(yaml|yml)$' | xargs ansible-review -q
   - ansible-playbook --syntax-check -i localhost, -c local tests/test.yml
-  - ansible-playbook -v --diff -i localhost, -c local tests/test.yml --extra-vars "ansible_python_interpreter=/usr/bin/python3 dhparams_bits=1024"
 
 notifications:
   webhooks: https://galaxy.ansible.com/api/v1/notifications/
