@@ -51,11 +51,23 @@
     csr_path: /etc/ssl/certs/snakeoil.csr
     provider: selfsigned
 
+- name: Check for firewalld installation.
+  stat:
+    path: /usr/bin/firewall-cmd
+  register: firewalld_stat
+
+- debug:
+    var: firewalld_stat
+    verbosity: 3
+
 - name: Allow HTTPS in firewalld.
   firewalld:
     service: https
     permanent: yes
     state: enabled
+  when:
+    - firewalld_stat.stat.exists
+    - firewalld_stat.stat.isreg
   notify: reload firewalld
 
 # Without this, the httpd reverseproxy service can't connect even to localhost.
