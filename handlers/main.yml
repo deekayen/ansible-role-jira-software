@@ -1,6 +1,6 @@
 ---
 
-- name: install jira service
+- name: "install jira service" # noqa 303
   command: /sbin/chkconfig --add jira
 
 - name: start jira
