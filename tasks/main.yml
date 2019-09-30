@@ -16,6 +16,15 @@
     var: nginx_cert_path
     verbosity: 2
 
+- name: Check for pip3 installation.
+  stat:
+    path: /usr/bin/pip3
+  register: pip3_stat
+
+- debug:
+    var: pip3_stat
+    verbosity: 1
+
 - name: Generate dhparams for nginx.
   openssl_dhparam:
     path: "{{ ssl_dhparam }}"
@@ -27,6 +36,14 @@
     path: /etc/ssl/certs/snakeoil.pem
     size: "{{ ssl_size }}"
     type: "{{ ssl_type }}"
+
+#
+- name: Install crypto libraries for generating certificates.
+  pip:
+    name:
+      - cryptography>=1.6
+      - PyOpenSSL>=16.2.0
+    executable: "{{ pip3_stat.stat.exists | ternary('pip3', 'pip') }}"
 
 - name: Generate an OpenSSL CSR with subjectAltName extension with dynamic list.
   openssl_csr:
@@ -69,15 +86,6 @@
     - firewalld_stat.stat.exists
     - firewalld_stat.stat.isreg
   notify: reload firewalld
-
-- name: Check for pip3 installation.
-  stat:
-    path: /usr/bin/pip3
-  register: pip3_stat
-
-- debug:
-    var: pip3_stat
-    verbosity: 1
 
 - name: Install policycoreutils-python for managing selinux.
   pip:
