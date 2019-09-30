@@ -13,9 +13,6 @@ matrix:
       language: python
       dist: bionic
 
-before_install:
-  - sudo apt-get install -y python-pip
-
 install:
   - pip install ansible
   - pip install ansible-lint
@@ -23,6 +20,9 @@ install:
   - ansible-galaxy install --force git+https://github.com/deekayen/ansible-role-jira-software.git,${TRAVIS_COMMIT}
 
 before_script:
+  - whereis pip
+  - whereis pip3
+  - pip3 -V
   - ansible --version
   - ansible-review --version
   - git --version
@@ -32,7 +32,7 @@ script:
   - ansible-lint --exclude=/home/travis/.ansible .
   - git ls-files | grep -Ei '^[^[:punct:]].+.(yaml|yml)$' | xargs ansible-review -q
   - ansible-playbook --syntax-check -i localhost, -c local tests/test.yml
-  - ansible-playbook --diff -i localhost, -c local tests/test.yml --extra-vars "dhparams_bits=1024"
+  - ansible-playbook -v --diff -i localhost, -c local tests/test.yml --extra-vars "ansible_python_interpreter=/usr/bin/python3 dhparams_bits=1024"
 
 notifications:
   webhooks: https://galaxy.ansible.com/api/v1/notifications/

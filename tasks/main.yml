@@ -70,9 +70,19 @@
     - firewalld_stat.stat.isreg
   notify: reload firewalld
 
+- name: Check for pip3 installation.
+  stat:
+    path: /usr/bin/pip3
+  register: pip3_stat
+
+- debug:
+    var: pip3_stat
+    verbosity: 1
+
 - name: Install policycoreutils-python for managing selinux.
   pip:
     name: policycoreutils-python
+    executable: "{{ pip3_stat.stat.exists | ternary('pip3', 'pip') }}"
 
 # Without this, the httpd reverseproxy service can't connect even to localhost.
 # This policy could be tigher, but the native selinux Ansible modules don't
