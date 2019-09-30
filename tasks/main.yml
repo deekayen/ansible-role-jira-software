@@ -70,6 +70,10 @@
     - firewalld_stat.stat.isreg
   notify: reload firewalld
 
+- name: Install policycoreutils-python for managing selinux.
+  pip:
+    name: policycoreutils-python
+
 # Without this, the httpd reverseproxy service can't connect even to localhost.
 # This policy could be tigher, but the native selinux Ansible modules don't
 # support tigher policies. We'd have to use command or shell for something like:
