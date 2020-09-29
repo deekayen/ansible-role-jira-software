@@ -9,7 +9,7 @@
 - name: Setup nginx cert directory.
   file:
     path: /etc/ssl/certs
-    state: directory
+    state: link
   register: nginx_cert_path
 
 - debug:
@@ -121,6 +121,7 @@
     path: "{{ item }}"
     owner: jira
     group: jira
+    mode: 0755
     recurse: yes
     state: directory
   with_items:
@@ -168,6 +169,7 @@
     regexp: '^jira.home'
     line: jira.home = /var/atlassian/jira
     owner: jira
+    mode: 0644
   become: yes
   become_user: jira
   notify: restart jira
@@ -178,6 +180,7 @@
     regexp: '^JIRA_USER'
     line: JIRA_USER="jira"
     owner: jira
+    mode: 0755
   become: yes
   become_user: jira
   notify: restart jira
@@ -187,6 +190,7 @@
     src: cluster.properties.j2
     dest: /var/atlassian/jira/cluster.properties
     owner: jira
+    mode: 0644
   notify: restart jira
 
 - name: Upload server configuration.
@@ -195,6 +199,7 @@
     dest: /opt/atlassian/jira/current/conf/server.xml
     owner: jira
     group: jira
+    mode: 0644
   notify: restart jira
 
 - name: Upload nginx configuration.
@@ -203,4 +208,5 @@
     dest: /etc/nginx/conf.d/jira.conf
     owner: root
     group: root
+    mode: 0644
   notify: restart nginx
