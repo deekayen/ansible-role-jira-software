@@ -1,7 +1,7 @@
 Atlassian JIRA Software
 =========
 
-[![Build Status](https://travis-ci.org/deekayen/ansible-role-jira-software.svg?branch=main)](https://travis-ci.org/deekayen/ansible-role-jira-software)
+[![Project Status: Unsupported – The project has reached a stable, usable state but the author(s) have ceased all work on it. A new maintainer may be desired.](https://www.repostatus.org/badges/latest/unsupported.svg)](https://www.repostatus.org/#unsupported)
 
 Install and configure Atlassian JIRA Software from tarball. Front-end it with a nginx, listening with TLS 1.2 using a self-signed certificate.
 
