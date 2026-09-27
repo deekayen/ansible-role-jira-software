@@ -1,22 +1,27 @@
 ---
+- name: Install jira service.
+  ansible.builtin.command: /sbin/chkconfig --add jira  # noqa: command-instead-of-module
+  changed_when: true
 
-- name: "install jira service" # noqa 303
-  command: /sbin/chkconfig --add jira
-
-- name: start jira
-  service:
+- name: Start jira.
+  ansible.builtin.service:
     name: jira
     state: started
-    enabled: yes
+    enabled: true
 
-- name: restart jira
-  service:
+- name: Restart jira.
+  ansible.builtin.service:
     name: jira
     state: restarted
-    enabled: yes
+    enabled: true
 
-- name: restart nginx
-  service:
+- name: Reload nginx.
+  ansible.builtin.service:
     name: nginx
     state: reloaded
-    enabled: yes
+    enabled: true
+
+- name: Reload firewalld.
+  ansible.builtin.service:
+    name: firewalld
+    state: reloaded

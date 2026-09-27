@@ -1,8 +1,7 @@
 ---
-
 # alternate ways to download
-#https://product-downloads.atlassian.com/software/jira/downloads/atlassian-jira-software-8.4.1.tar.gz
-#https://www.atlassian.com/software/jira/downloads/binary/atlassian-jira-software-8.4.1.tar.gz
+# https://product-downloads.atlassian.com/software/jira/downloads/atlassian-jira-software-8.4.1.tar.gz
+# https://www.atlassian.com/software/jira/downloads/binary/atlassian-jira-software-8.4.1.tar.gz
 
 java_application: java-11-openjdk
 

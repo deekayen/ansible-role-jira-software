@@ -1,0 +1,75 @@
+---
+argument_specs:
+  main:
+    short_description: Install Atlassian Jira Software behind nginx on EL 7.
+    description:
+      - Installs Java, unpacks a Jira Software standalone tarball, installs
+        an init script, and fronts it with nginx using a self-signed TLS
+        certificate. Jira Server reached end of life in February 2024.
+    author:
+      - David Norman
+    options:
+      java_application:
+        type: str
+        default: java-11-openjdk
+        description: Java package to install.
+      client_max_body_size:
+        type: str
+        default: 100M
+        description: nginx client_max_body_size for uploads.
+      jira_version:
+        type: str
+        default: 8.4.1
+        description: Jira Software version to download.
+      jira_download:
+        type: str
+        default: "https://product-downloads.atlassian.com/software/jira/downloads/atlassian-jira-software-{{ jira_version }}.tar.gz"
+        description: URL of the Jira Software tarball.
+      dhparams_bits:
+        type: int
+        default: 3072
+        description: Size of the nginx Diffie-Hellman parameters.
+      server_name:
+        type: str
+        default: jira.example.com
+        description: nginx server_name for the Jira site.
+      ssl_certificate:
+        type: path
+        default: /etc/ssl/certs/snakeoil.crt
+        description: TLS certificate nginx serves.
+      ssl_certificate_key:
+        type: path
+        default: /etc/ssl/certs/snakeoil.pem
+        description: TLS private key nginx serves.
+      ssl_dhparam:
+        type: path
+        default: /etc/ssl/certs/dhparams.pem
+        description: Diffie-Hellman parameter file for nginx.
+      ssl_size:
+        type: int
+        default: 3072
+        description: Size of the generated TLS private key.
+      ssl_type:
+        type: str
+        default: RSA
+        description: Type of the generated TLS private key.
+      ssl_country_name:
+        type: str
+        default: AU
+        description: Country in the self-signed certificate subject.
+      ssl_state_or_province_name:
+        type: str
+        default: Some-State
+        description: State or province in the certificate subject.
+      ssl_locality_name:
+        type: str
+        default: ""
+        description: Locality in the certificate subject.
+      ssl_organization_name:
+        type: str
+        default: Internet Widgits Pty Ltd
+        description: Organization in the certificate subject.
+      ssl_organizational_unit_name:
+        type: str
+        default: ""
+        description: Organizational unit in the certificate subject.

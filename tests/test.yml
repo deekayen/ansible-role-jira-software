@@ -1,7 +1,8 @@
 ---
-- hosts: localhost
-  connection: local
+- name: Apply the jira_software role for a syntax check.
+  hosts: localhost
+  gather_facts: false
   become: true
 
   roles:
-    - ansible-role-jira-software
+    - role: deekayen.jira_software

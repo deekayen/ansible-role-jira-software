@@ -1,0 +1,25 @@
+---
+- name: Assert jira_download is an HTTP(S) tarball URL.
+  ansible.builtin.assert:
+    that:
+      - jira_download is match('^https?://.+\.tar\.gz$')
+    fail_msg: "jira_download must be an http(s) URL of a .tar.gz file, got: {{ jira_download }}"
+    quiet: true
+
+- name: Assert the TLS key and DH parameter sizes are sensible.
+  ansible.builtin.assert:
+    that:
+      - ssl_size | int >= 2048
+      - dhparams_bits | int >= 2048
+      - ssl_type in ['RSA', 'DSA', 'ECC', 'Ed25519', 'Ed448', 'X25519', 'X448']
+    fail_msg: >-
+      ssl_size and dhparams_bits must be at least 2048 and ssl_type a type
+      community.crypto.openssl_privatekey accepts.
+    quiet: true
+
+- name: Assert client_max_body_size is an nginx size.
+  ansible.builtin.assert:
+    that:
+      - client_max_body_size is match('^[0-9]+[kKmMgG]?$')
+    fail_msg: "client_max_body_size must be an nginx size like 100M, got: {{ client_max_body_size }}"
+    quiet: true

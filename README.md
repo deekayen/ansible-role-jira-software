@@ -1,6 +1,11 @@
 Atlassian JIRA Software
 =========
 
+> **Deprecated.** Atlassian ended Jira Server in February 2024, and this role
+> installs Jira Software 8.4.1 on EL 7, which is also end of life. It is kept
+> for existing installs. CI lints and syntax-checks it but no longer
+> converges it on a running system.
+
 [![Project Status: Unsupported – The project has reached a stable, usable state but the author(s) have ceased all work on it. A new maintainer may be desired.](https://www.repostatus.org/badges/latest/unsupported.svg)](https://www.repostatus.org/#unsupported)
 
 Install and configure Atlassian JIRA Software from tarball. Front-end it with a nginx, listening with TLS 1.2 using a self-signed certificate.

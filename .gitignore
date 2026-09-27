@@ -7,3 +7,6 @@
 .Trashes
 ehthumbs.db
 Thumbs.db
+.ansible/
+__pycache__/
+.cache/

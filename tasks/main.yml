@@ -1,35 +1,40 @@
 ---
+- name: Validate role variables.
+  ansible.builtin.import_tasks: assert.yml
+  tags:
+    - always
 
 - name: Install ca-certificates for nginx TLS.
-  yum:
+  ansible.builtin.package:
     name:
       - ca-certificates
     state: present
 
 - name: Setup nginx cert directory.
-  file:
+  ansible.builtin.file:
     path: /etc/ssl/certs
     state: link
   register: nginx_cert_path
 
-- debug:
+- name: "Debug: nginx cert directory."
+  ansible.builtin.debug:
     var: nginx_cert_path
     verbosity: 2
 
 - name: Generate dhparams for nginx.
-  openssl_dhparam:
+  community.crypto.openssl_dhparam:
     path: "{{ ssl_dhparam }}"
     size: "{{ dhparams_bits }}"
-  notify: restart nginx
+  notify: Reload nginx.
 
 - name: Generate an OpenSSL private key.
-  openssl_privatekey:
+  community.crypto.openssl_privatekey:
     path: /etc/ssl/certs/snakeoil.pem
     size: "{{ ssl_size }}"
     type: "{{ ssl_type }}"
 
 - name: Generate an OpenSSL CSR with subjectAltName extension with dynamic list.
-  openssl_csr:
+  community.crypto.openssl_csr:
     path: /etc/ssl/certs/snakeoil.csr
     privatekey_path: /etc/ssl/certs/snakeoil.pem
     country_name: "{{ ssl_country_name }}"
@@ -37,42 +42,44 @@
     locality_name: "{{ ssl_locality_name }}"
     organization_name: "{{ ssl_organization_name }}"
     organizational_unit_name: "{{ ssl_organizational_unit_name }}"
-    common_name: "{{ ansible_fqdn }}"
+    common_name: "{{ ansible_facts.fqdn }}"
     subject_alt_name: "{{ item.value | map('regex_replace', '^', 'DNS:') | list }}"
   with_dict:
     dns_server:
       - "{{ inventory_hostname }}"
-      - "{{ ansible_hostname }}"
+      - "{{ ansible_facts.hostname }}"
 
 - name: Generate a self-signed TLS certificate.
-  openssl_certificate:
+  community.crypto.x509_certificate:
     path: /etc/ssl/certs/snakeoil.crt
     privatekey_path: /etc/ssl/certs/snakeoil.pem
     csr_path: /etc/ssl/certs/snakeoil.csr
     provider: selfsigned
 
 - name: Check for firewalld installation.
-  stat:
+  ansible.builtin.stat:
     path: /usr/bin/firewall-cmd
   register: firewalld_stat
 
-- debug:
+- name: "Debug: firewalld binary."
+  ansible.builtin.debug:
     var: firewalld_stat
     verbosity: 3
 
 - name: Allow HTTPS in firewalld.
-  firewalld:
+  ansible.posix.firewalld:
     service: https
-    permanent: yes
+    permanent: true
     state: enabled
   when:
     - firewalld_stat.stat.exists
     - firewalld_stat.stat.isreg
-  notify: reload firewalld
+  notify: Reload firewalld.
 
 - name: Install policycoreutils-python for managing selinux.
-  pip:
+  ansible.builtin.package:
     name: policycoreutils-python
+    state: present
 
 # Without this, the httpd reverseproxy service can't connect even to localhost.
 # This policy could be tigher, but the native selinux Ansible modules don't
@@ -82,47 +89,47 @@
 # semanage port -a -p tcp -t http_port_t 8081
 #
 # cat /var/log/audit/audit.log | audit2allow -v
-#============= httpd_t ==============
+# ============= httpd_t ==============
 # src="httpd_t" tgt="transproxy_port_t" class="tcp_socket", perms="name_connect"
 # comm="httpd" exe="" path=""
-#!!!! This avc can be allowed using the boolean 'httpd_can_network_connect'
-#allow httpd_t transproxy_port_t:tcp_socket name_connect;
+# !!!! This avc can be allowed using the boolean 'httpd_can_network_connect'
+# allow httpd_t transproxy_port_t:tcp_socket name_connect;
 - name: Set httpd_t selinux policy to permissive.
-  selinux_permissive:
+  community.general.selinux_permissive:
     name: httpd_t
     permissive: true
 
 - name: Install Java.
-  yum:
+  ansible.builtin.package:
     name: "{{ java_application }}"
     state: present
 
 - name: Create local jira group.
-  group:
+  ansible.builtin.group:
     name: jira
     gid: 50000
     state: present
 
 - name: Create local jira user.
-  user:
+  ansible.builtin.user:
     name: jira
-    group: jira
+    ansible.builtin.group: jira
     uid: 50000
     state: present
 
 - name: Set permissions on the home directory.
-  file:
+  ansible.builtin.file:
     path: /var/atlassian
-    mode: 0755
+    mode: "0755"
     state: directory
 
 - name: Setup install paths.
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     owner: jira
-    group: jira
-    mode: 0755
-    recurse: yes
+    ansible.builtin.group: jira
+    mode: "0755"
+    recurse: true
     state: directory
   with_items:
     - /opt/atlassian/jira
@@ -132,82 +139,82 @@
 # This is before the tarball so the service installation handler
 # will fire before the later handler tries to start the service.
 - name: Copy init.d service file for JIRA.
-  copy:
+  ansible.builtin.copy:
     src: jira
     dest: /etc/init.d/jira
-    mode: 0755
+    mode: "0755"
     owner: root
-    group: root
+    ansible.builtin.group: root
   notify:
-    - install jira service
-    - restart jira
+    - Install jira service.
+    - Restart jira.
 
 - name: Unpack the install archive.
-  unarchive:
+  ansible.builtin.unarchive:
     src: "{{ jira_download }}"
     dest: /opt/atlassian/jira
     owner: jira
-    mode: 0755
-    remote_src: yes
+    mode: "0755"
+    remote_src: true
     creates: "/opt/atlassian/jira/atlassian-jira-software-{{ jira_version }}-standalone/bin/startup.sh"
-  become: yes
+  become: true
   become_user: jira
-  notify: start jira
+  notify: Start jira.
 
 - name: Link the unpacked archive to current.
-  file:
+  ansible.builtin.file:
     src: "/opt/atlassian/jira/atlassian-jira-software-{{ jira_version }}-standalone"
     dest: /opt/atlassian/jira/current
     owner: jira
     state: link
-  become: yes
+  become: true
   become_user: jira
-  notify: restart jira
+  notify: Restart jira.
 
 - name: Set the jira application home property.
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /opt/atlassian/jira/atlassian-jira-software-{{ jira_version }}-standalone/atlassian-jira/WEB-INF/classes/jira-application.properties
     regexp: '^jira.home'
     line: jira.home = /var/atlassian/jira
     owner: jira
-    mode: 0644
-  become: yes
+    mode: "0644"
+  become: true
   become_user: jira
-  notify: restart jira
+  notify: Restart jira.
 
 - name: Set the jira application local user property.
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /opt/atlassian/jira/atlassian-jira-software-{{ jira_version }}-standalone/bin/user.sh
     regexp: '^JIRA_USER'
     line: JIRA_USER="jira"
     owner: jira
-    mode: 0755
-  become: yes
+    mode: "0755"
+  become: true
   become_user: jira
-  notify: restart jira
+  notify: Restart jira.
 
 - name: Upload the cluster properties configuration.
-  template:
+  ansible.builtin.template:
     src: cluster.properties.j2
     dest: /var/atlassian/jira/cluster.properties
     owner: jira
-    mode: 0644
-  notify: restart jira
+    mode: "0644"
+  notify: Restart jira.
 
 - name: Upload server configuration.
-  template:
+  ansible.builtin.template:
     src: server.xml.j2
     dest: /opt/atlassian/jira/current/conf/server.xml
     owner: jira
-    group: jira
-    mode: 0644
-  notify: restart jira
+    ansible.builtin.group: jira
+    mode: "0644"
+  notify: Restart jira.
 
 - name: Upload nginx configuration.
-  template:
+  ansible.builtin.template:
     src: nginx.conf.j2
     dest: /etc/nginx/conf.d/jira.conf
     owner: root
-    group: root
-    mode: 0644
-  notify: restart nginx
+    ansible.builtin.group: root
+    mode: "0644"
+  notify: Reload nginx.

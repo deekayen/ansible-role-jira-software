@@ -1,22 +1,31 @@
+---
 galaxy_info:
+  namespace: deekayen
   role_name: jira_software
   author: David Norman
   description: Install Atlassian Jira software.
 
+  github_branch: main
   issue_tracker_url: https://github.com/deekayen/ansible-role-jira-software/issues
 
   license: BSD-3-Clause
+  min_ansible_version: "2.15"
 
-  min_ansible_version: 2.4
-
+  # Jira Server reached end of life in February 2024; kept for EL 7 hosts.
   platforms:
     - name: EL
       versions:
-        - 7
+        - "7"
+
+  galaxy_tags:
+    - jira
+    - atlassian
+    - nginx
 
 dependencies:
-  - nginxinc.nginx
+  - role: nginxinc.nginx
   - role: geerlingguy.pip
-    pip_install_packages:
-      - name: PyOpenSSL>=16.2.0
-      - name: cryptography>=1.6
+    vars:
+      pip_install_packages:
+        - name: PyOpenSSL>=16.2.0
+        - name: cryptography>=1.6
